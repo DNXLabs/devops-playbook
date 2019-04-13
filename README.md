@@ -138,13 +138,116 @@ Even if you plan to deploy the stack only one time (one environment), still a go
 
 ## Principles
 
-## File Structure
+Containers are used to keep consistency between environments (including local) and reuse tools during deplyoments.
+
+A container should always carry the bare minimum to perform its purpose.
+
+Always start with an Alpine container, or choose one that is based on Alpine.
+
+## Scope
+
+A good container image for performing AWS operations contains only AWS CLI, its requirements and maybe a bash script that calls it.
+
+Another example, to build and deploy a serverless application, you will need (at least):
+* A container image with serverless CLI
+* Another container image to build that serverless function
+
+We will see how the process works together later on this document.
+
+## Repository Structure
+
+A container image should have its own repository.
+
+Set the repository as public, unless there's a reason not to.
+
+Use DockerHub to build and host the image. DockerHub connects to GitHub and automatically builds images from Dockerfiles in repositores.
+
+The repository should have a `Dockerfile` in the root.
+
+Naming scheme:
+* Repository: `docker-<image_name>`
+* DockerHub: `<image-name>`
 
 ## Local vs Deployed
 
-## Makefiles and the 3musketeers pattern
+> The process described here is alpha (untested), any improvement is welcomed.
 
+When developing locally with a docker container, the image used should be the same as deployed.
 
+Sometimes it's not possible when running locally it requires tools for debugging or auto-refreshing that are not required when deployed to an environment.
+
+In this case, use multi-stage builds so the same Dockerfile have stages for building, running locally and deployed.
+
+* https://dev.to/brpaz/using-docker-multi-stage-builds-during-development-35bc
+
+# Makefiles and the 3musketeers pattern
+
+## Principles
+
+Makefile is used as a common descriptor for building, deploying, testing and other operations to be performed.
+
+By looking at the Makefile, the developer should have a quick view of all possible operations that can be performed on that code base, in the form of make targets.
+
+Examples of targets:
+* build
+* test
+* deploy
+
+A developer should be able to clone a repository, set the required variables in the `.env` file and successfully run `make <target>` without any special setup in their machine other than having make, docker and docker-compose installed.
+
+The main benefit of this pattern is running operations on both developers machine and CI worker the same.
+
+## 3musketeers
+
+A Makefile and docker-compose.yml file should exist in the repository.
+
+Makefile have targets that call `docker-composer run <service>`. The service being a tool or the application itself.
+
+Example:
+
+```make
+.env:
+	cp .env.template .env
+
+assumeRole: .env
+	docker-compose run --rm aws assume-role.sh >> .env
+.PHONY: assumeRole
+
+deploy: assumeRole
+	docker-compose run --rm deploy ./deploy.sh
+.PHONY: deploy
+```
+
+The main target above, `deploy`, will first call `assumeRole`, which in turn calls `.env`.
+
+* `.env` target creates the file if it doesn't exist.
+* `assumeRole` uses AWS CLI to assume a role and output the credentials to the `.env` file
+* `deploy` runs the deploy script using the credentials
+
+The docker-compose.yml file for the example above looks like:
+
+```yaml
+version: '3.2'
+
+services:
+  deploy:
+    image: dnxsolutions/aws:1.4.0
+    entrypoint: "/bin/bash -c"
+    env_file:
+      - .env
+    volumes:
+      - ./deploy:/work
+
+  aws:
+    image: dnxsolutions/aws:1.4.0
+    entrypoint: "/bin/bash -c"
+    env_file: 
+      - .env
+```
+
+In this example, the deploy script uses AWS CLI so we are using the `dnxsolutions/aws` image, same as the `assumeRole` target, which also uses the AWS CLI.
+
+But in another case where we would deploy to kubernetes, the deploy service would use an image built for that, with kubectl, helm, etc.
 
 # Application Deployment
 
