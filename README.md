@@ -249,6 +249,29 @@ In this example, the deploy script uses AWS CLI so we are using the `dnxsolution
 
 But in another case where we would deploy to kubernetes, the deploy service would use an image built for that, with kubectl, helm, etc.
 
+## Variables
+
+All variables used by make targets should be declared in the `.env.compose` file, without values.
+
+Example `.env.compose`:
+```
+NODE_ENV
+```
+
+When `make .env` runs, if the `.env` file doesn't exist, it's created from `.env.compose`.
+
+Now, when running in a CI tool, this value should be set in the pipeline stage and set as an environment variable when the worker is running.
+
+And similarly, when running in a developer's local machine, the value can be set in as an environment variable, or set directly in the `.env`, such as:
+
+```
+NODE_ENV=development
+```
+
+If `make .env` is called again, it won't overwrite the file as it already exists (make has this logic), so the values set there are preserved.
+
+The `.env` file should be in the `.gitignore` and not pushed to the repository. Examples (like a `.env.local`) are ok to push to repository as long as they don't contain credentials or sensitive information.
+
 # Application Deployment
 
 # Pipeline-as-code
