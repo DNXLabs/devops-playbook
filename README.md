@@ -59,7 +59,7 @@ A module should be opinionated to deploy a component with a certain architecture
 
 A module should have documentation on how to use it, inputs and outputs and examples.
 
-If you reuire a variation of the module causing multiple resources to be conditional and making code and dependencies more complex, a new module should be created in this case.
+If you require a variation of the module causing multiple resources to be conditional and making code and dependencies more complex, a new module should be created in this case.
 
 Examples of modules:
 
@@ -165,8 +165,8 @@ Use DockerHub to build and host the image. DockerHub connects to GitHub and auto
 The repository should have a `Dockerfile` in the root.
 
 Naming scheme:
-* Repository: `docker-<image_name>`
-* DockerHub: `<image-name>`
+* Repository: `docker-<image name>`
+* DockerHub: `<image name>`
 
 ## Local vs Deployed
 
